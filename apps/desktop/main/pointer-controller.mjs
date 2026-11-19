@@ -12,6 +12,7 @@ export class PointerController {
     placeDrag = (bounds) => bounds,
     verification = false,
     now = Date.now,
+    clickThrough = true,
   }) {
     Object.assign(this, {
       window,
@@ -23,6 +24,7 @@ export class PointerController {
       placeDrag,
       verification,
       now,
+      clickThrough,
     });
     this.drag = null;
     this.avatarPress = null;
@@ -103,6 +105,7 @@ export class PointerController {
       mask = this.getMask();
     if (this.avatarPress) this.onAvatarTether(this.avatarPress, cursor, bounds, time);
     const interactive =
+      !this.clickThrough ||
       this.drag !== null ||
       this.avatarPress !== null ||
       regions.controls.some((rect) => pointInRect(point, rect)) ||

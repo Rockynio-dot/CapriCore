@@ -7845,6 +7845,9 @@ async function initializeDesktop() {
     pointer = new PointerController({
       window,
       screen,
+      // Under Wayland/XWayland the cursor position is unknown while the
+      // window ignores input, so it could never become clickable again.
+      clickThrough: process.platform !== 'linux',
       getRegions: () => regions,
       getMask: () => activeMask,
       onAvatarTether: (press, cursor, bounds, now) =>
