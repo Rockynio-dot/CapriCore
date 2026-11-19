@@ -48,6 +48,10 @@ fi
 step "JavaScript dependencies (npm ci)"
 npm ci
 
+step "Desktop runtime (Electron)"
+# Recent Electron releases download their binary lazily, not during npm ci.
+node node_modules/electron/install.js
+
 if [[ ! -f config/core.local.json ]]; then
   step "Hardware profile"
   node packages/runtime/bin/capri.mjs setup --yes
