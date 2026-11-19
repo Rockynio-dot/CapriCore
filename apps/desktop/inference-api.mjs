@@ -8,6 +8,7 @@ import { noLinks } from '../../packages/installer/src/policy.mjs';
 import { REASONING_BUDGETS } from '../../packages/skills/src/settings-catalog.mjs';
 import { CHATGPT_RESOURCE, ChatGPTPlanError } from './chatgpt-plan-auth.mjs';
 import { chatGPTCompletion } from './chatgpt-plan-completions.mjs';
+import { claudeCompletion, isClaudeEndpoint } from './claude-completions.mjs';
 import { chatGPTFastEffort, chatGPTModelCapabilities } from './chatgpt-plan-models.mjs';
 import { writeJsonAtomic } from './storage.mjs';
 import { normalizeApiKey, validApiKey as validKey, apiKeyProblem } from './renderer/api-key.mjs';
@@ -104,11 +105,14 @@ function conversationReasoning(payload, config) {
     if (new URL(config.baseUrl).origin === GROQ_ORIGIN && GROQ_REASONING_MODELS.has(config.model))
       request.reasoning_effort = effort;
     if (config.authMode === 'chatgpt') request.reasoning = { effort };
+    if (isClaudeEndpoint(config.baseUrl)) request.reasoning = { effort };
   } else {
     if (request.max_tokens > 2048) request.max_tokens = 2048;
     if (request.max_completion_tokens > 2048) request.max_completion_tokens = 2048;
     if (config.authMode === 'chatgpt')
       request.reasoning = { effort: chatGPTFastEffort(config.model) };
+    // Ordinary companion turns favour a quick reply.
+    if (isClaudeEndpoint(config.baseUrl)) request.reasoning = { effort: 'low' };
   }
   return { request, selected };
 }
@@ -1161,25 +1165,35 @@ export class InferenceApi {
     }
     let response;
     try {
-      const url = config.baseUrl + '/chat/completions';
-      const options = {
-        method: 'POST',
-        redirect: 'error',
-        signal,
-        headers: {
-          'content-type': 'application/json',
-          ...(key ? { authorization: 'Bearer ' + key } : {}),
-        },
-        body: JSON.stringify({
-          ...request,
+      if (isClaudeEndpoint(config.baseUrl)) {
+        response = await claudeCompletion({
+          key,
+          payload: request,
           model: config.model,
-        }),
-      };
-      response = !remote
-        ? await postLoopback(url, options)
-        : proxyApi && this.proxySession
-          ? await postProxyApi(this.proxySession(), this.fetchImpl, url, options)
-          : await this.fetchImpl(url, options);
+          signal,
+          fetchImpl: this.fetchImpl,
+        });
+      } else {
+        const url = config.baseUrl + '/chat/completions';
+        const options = {
+          method: 'POST',
+          redirect: 'error',
+          signal,
+          headers: {
+            'content-type': 'application/json',
+            ...(key ? { authorization: 'Bearer ' + key } : {}),
+          },
+          body: JSON.stringify({
+            ...request,
+            model: config.model,
+          }),
+        };
+        response = !remote
+          ? await postLoopback(url, options)
+          : proxyApi && this.proxySession
+            ? await postProxyApi(this.proxySession(), this.fetchImpl, url, options)
+            : await this.fetchImpl(url, options);
+      }
     } catch (error) {
       const networkCode = failureNetworkCode(error);
       const proxyTimeout =

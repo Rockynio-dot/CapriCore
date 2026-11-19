@@ -43,7 +43,10 @@ export function resolveExecutables(
       throw new Error(variable + ' must point to an existing executable.');
     return env[variable];
   };
-  const bundledNode = path.join(paths.cache, `node-v${settings.nodeVersion}-win-x64/node.exe`);
+  const bundledNode =
+    platform === 'win32'
+      ? path.join(paths.cache, `node-v${settings.nodeVersion}-win-x64/node.exe`)
+      : path.join(paths.cache, `node-v${settings.nodeVersion}-linux-x64/bin/node`);
   const node = explicit(
     'CAPRI_NODE_PATH',
     findExecutable('node', {
@@ -57,7 +60,11 @@ export function resolveExecutables(
     findExecutable('llama-server', {
       env,
       platform,
-      extra: [path.join(paths.cache, `llama-${settings.llamaVersion}-vulkan/llama-server.exe`)],
+      extra: [
+        platform === 'win32'
+          ? path.join(paths.cache, `llama-${settings.llamaVersion}-vulkan/llama-server.exe`)
+          : path.join(paths.cache, `llama-${settings.llamaVersion}-vulkan/llama-server`),
+      ],
     }),
   );
   return Object.freeze({

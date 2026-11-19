@@ -5,7 +5,7 @@ import { initialize } from './context.mjs';
 import { launch, managedProcess } from './host/processes.mjs';
 import { ensureDesktopIdentity } from './host/desktop-identity.mjs';
 import { runtime } from './context.mjs';
-import { electronBundleReady } from './host/electron-bundle.mjs';
+import { electronBundleReady, ELECTRON_EXECUTABLE } from './host/electron-bundle.mjs';
 import { updateBlocksStartup } from './host/update-state.mjs';
 
 export async function startDesktop({ wait = false } = {}) {
@@ -13,10 +13,8 @@ export async function startDesktop({ wait = false } = {}) {
     throw new Error(
       'An update is in progress or was interrupted. Wait for it to finish, or repair this folder with the full installer.',
     );
-  if (process.platform !== 'win32' || process.arch !== 'x64')
-    throw new Error(
-      'This desktop preview currently targets Windows x64. Runtime unit tests also run on Linux.',
-    );
+  if (!['win32', 'linux'].includes(process.platform) || process.arch !== 'x64')
+    throw new Error('The Capri desktop currently targets Windows x64 and Linux x64.');
   if (!existsSync(path.join(root, 'config/core.local.json')))
     throw new Error('Run npm run setup first to choose a hardware profile.');
   const existing = managedProcess('desktop');
@@ -33,7 +31,7 @@ export async function startDesktop({ wait = false } = {}) {
     );
   const rt = runtime();
   initialize(rt);
-  let executable = path.join(root, 'node_modules/electron/dist/electron.exe');
+  let executable = path.join(root, 'node_modules/electron/dist', ELECTRON_EXECUTABLE);
   executable = await ensureDesktopIdentity(executable);
   for (const action of ['stop', 'show'])
     try {
@@ -52,7 +50,14 @@ export async function startDesktop({ wait = false } = {}) {
     const marker = await launch(
       'desktop',
       executable,
-      [path.join(root, 'apps/desktop/main.mjs')],
+      [
+        // The companion positions transparent windows itself, which Wayland
+        // forbids; run through XWayland unless explicitly overridden.
+        ...(process.platform === 'linux' && process.env.CAPRI_WAYLAND !== '1'
+          ? ['--ozone-platform=x11']
+          : []),
+        path.join(root, 'apps/desktop/main.mjs'),
+      ],
       rt,
       wait ? { onExit: ended } : {},
     );

@@ -7927,7 +7927,9 @@ async function initializeDesktop() {
     activeMask = maskFor(avatar.currentId);
     pointer.start();
 
-    tray = new Tray(path.join(root, 'assets/default/app.ico'));
+    tray = new Tray(
+      process.platform === 'win32' ? path.join(root, 'assets/default/app.ico') : applicationIcon,
+    );
     tray.setToolTip(uiText('Capri desktop companion', languages.value.interface));
     tray.on('click', () => restoreCompanion());
     tray.on('right-click', () => {

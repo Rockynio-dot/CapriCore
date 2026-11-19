@@ -158,8 +158,19 @@ export class InferencePanel {
         this.get('url').value = baseUrl;
         if (event.target.value !== 'gemini')
           this.get('model').value =
-            event.target.value === 'lemonade' ? 'Phi-4-mini-instruct-NPU' : '';
-        this.get('vision').checked = false;
+            event.target.value === 'lemonade'
+              ? 'Phi-4-mini-instruct-NPU'
+              : event.target.value === 'claude'
+                ? 'claude-opus-5-5'
+                : '';
+        // Capri talks to Claude through the native Messages API, which
+        // supports tools and images on every current model.
+        const claude = event.target.value === 'claude';
+        this.get('vision').checked = claude;
+        if (claude) {
+          this.get('tools').checked = true;
+          this.get('context').value = '262144';
+        }
         this.syncProvider();
       } else if (!baseUrl) this.get('url').focus();
     };
@@ -575,7 +586,9 @@ export class InferencePanel {
           ? 'organization/model-name'
           : ['openrouter', 'proxyapi'].includes(preset)
             ? 'provider/model-name'
-            : 'model-id',
+            : preset === 'claude'
+              ? 'claude-opus-5-5'
+              : 'model-id',
     );
     this.get('key').placeholder =
       this.editingProfile?.authMode === 'chatgpt'
@@ -589,7 +602,9 @@ export class InferencePanel {
                   ? 'hf_…'
                   : preset === 'openrouter'
                     ? 'sk-or-v1-…'
-                    : 'API_KEY_FROM_PROVIDER',
+                    : preset === 'claude'
+                      ? 'sk-ant-…'
+                      : 'API_KEY_FROM_PROVIDER',
             );
     this.get('context').placeholder = '32768';
   }

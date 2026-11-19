@@ -24,6 +24,10 @@ Capabilities depend on the selected model, its tool/image support and your permi
 
 [Set up native NPU and editor integration, follow desktop task progress, and check experimental Windows 10 compatibility](docs/native-npu-and-coding.md).
 
+## Linux (Fedora) + Claude API
+
+This fork runs on Fedora x86_64 with Claude as the conversation model: run `./install-linux.sh`, then `./capri.sh desktop`. See [docs/linux.md](docs/linux.md).
+
 ## Quick installation
 
 On Windows 10 22H2/11 x64, run the **CapriSetup** executable for your release, or extract the source package and double-click **Install Capri.cmd**. The wizard installs private runtimes, selected models and optional speech components. The CPU request classifier is included. Choose local LLMs, Hugging Face model selection, or API mode (BETA). API mode skips local conversation-model downloads and, by default, startup loading. No global Python/Node installation or terminal is required.

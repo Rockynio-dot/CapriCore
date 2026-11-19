@@ -2,8 +2,9 @@
 import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
+export const ELECTRON_EXECUTABLE = process.platform === 'win32' ? 'electron.exe' : 'electron';
 export const ELECTRON_RUNTIME_FILES = [
-  'electron.exe',
+  ELECTRON_EXECUTABLE,
   'icudtl.dat',
   'resources.pak',
   'v8_context_snapshot.bin',

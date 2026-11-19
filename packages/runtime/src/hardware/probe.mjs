@@ -304,7 +304,7 @@ export async function probeHardware({
   };
   const [nvidiaGpus, windowsGpus] = await Promise.all([queryNvidia(), queryWindows()]);
   report.gpus = mergeGpuInventory(windowsGpus, nvidiaGpus);
-  if (report.platform !== 'win32' || report.arch !== 'x64')
-    report.warnings.push('The desktop is currently qualified for Windows x64 only.');
+  if (!['win32', 'linux'].includes(report.platform) || report.arch !== 'x64')
+    report.warnings.push('The desktop is currently qualified for Windows x64 and Linux x64 only.');
   return report;
 }
